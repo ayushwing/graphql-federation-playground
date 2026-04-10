@@ -4,7 +4,9 @@ type Query {
     me: User
 }
 
-type User {
+# @key makes User a federation entity — other subgraphs can reference it
+# by id and Apollo Router will route _entities queries back here to resolve them.
+type User @key(fields: "id") {
     id: ID!
     username: String!
     email: String!
