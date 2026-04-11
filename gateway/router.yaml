@@ -1,0 +1,43 @@
+# Apollo Router configuration
+# Docs: https://www.apollographql.com/docs/router/configuration/overview
+
+supergraph:
+  # Path to the composed supergraph schema.
+  # Regenerate with: rover supergraph compose --config supergraph.yaml > supergraph.graphql
+  path: /dist/schema/supergraph.graphql
+
+# Expose the router on all interfaces so Docker port-mapping works
+listen: 0.0.0.0:4000
+
+sandbox:
+  enabled: true          # Apollo Sandbox UI at http://localhost:4000
+
+include_subgraph_errors:
+  all: true              # surface subgraph errors to clients (dev only — disable in prod)
+
+headers:
+  all:
+    request:
+      - propagate:
+          named: "x-correlation-id"
+      - propagate:
+          named: "authorization"
+
+cors:
+  origins:
+    - http://localhost:3000
+    - http://localhost:4000
+  allow_credentials: true
+
+traffic_shaping:
+  all:
+    deduplicate_query: true    # deduplicate identical in-flight subgraph queries
+
+telemetry:
+  tracing:
+    common:
+      service_name: "apollo-router"
+      service_namespace: "federation-playground"
+    otlp:
+      endpoint: http://jaeger:4317
+      protocol: grpc

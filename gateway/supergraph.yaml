@@ -1,0 +1,19 @@
+# Rover composition config — used to generate supergraph.graphql
+# Run: rover supergraph compose --config gateway/supergraph.yaml > gateway/supergraph.graphql
+federation_version: =2.6.0
+
+subgraphs:
+  users:
+    routing_url: http://user-subgraph:8081/graphql
+    schema:
+      subgraph_url: http://user-subgraph:8081/graphql
+
+  products:
+    routing_url: http://product-subgraph:8082/graphql
+    schema:
+      subgraph_url: http://product-subgraph:8082/graphql
+
+  reviews:
+    routing_url: http://review-subgraph:8083/graphql
+    schema:
+      subgraph_url: http://review-subgraph:8083/graphql
