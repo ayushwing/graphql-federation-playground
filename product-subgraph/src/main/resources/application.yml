@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: product-subgraph
+
+server:
+  port: 8082
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+dgs:
+  graphql:
+    path: /graphql
+    schema-locations: classpath:schema/**/*.graphqls

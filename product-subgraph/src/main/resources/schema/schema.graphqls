@@ -1,0 +1,44 @@
+type Query {
+    product(id: ID!): Product
+    products(filter: ProductFilter, page: Int = 0, size: Int = 20): ProductConnection!
+    productsByCategory(category: String!): [Product!]!
+}
+
+# @key makes Product a federation entity resolvable by id across all subgraphs
+type Product @key(fields: "id") {
+    id: ID!
+    name: String!
+    description: String
+    price: Float!
+    category: String!
+    inStock: Boolean!
+    createdBy: User!
+    createdAt: String!
+}
+
+# Reference to User owned by the user-subgraph.
+# @external means this field is defined and resolved there.
+type User @key(fields: "id") @extends {
+    id: ID! @external
+    # Products created by this user — resolved here in the product subgraph
+    products: [Product!]!
+}
+
+# --- Pagination ---
+
+type ProductConnection {
+    nodes: [Product!]!
+    totalCount: Int!
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+}
+
+# --- Filtering ---
+
+input ProductFilter {
+    category: String
+    minPrice: Float
+    maxPrice: Float
+    inStock: Boolean
+    nameContains: String
+}

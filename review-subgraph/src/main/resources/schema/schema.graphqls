@@ -1,0 +1,45 @@
+type Query {
+    reviews(productId: ID!): [Review!]!
+    review(id: ID!): Review
+    myReviews: [Review!]!
+}
+
+type Mutation {
+    createReview(input: CreateReviewInput!): Review!
+    deleteReview(id: ID!): Boolean!
+}
+
+type Subscription {
+    reviewAdded(productId: ID!): Review!
+}
+
+type Review {
+    id: ID!
+    rating: Int!
+    comment: String!
+    author: User!
+    product: Product!
+    createdAt: String!
+}
+
+# Extends Product (owned by product-subgraph) with a reviews field.
+# Apollo Router resolves Product entities via _entities, then calls this subgraph
+# to get the reviews field.
+type Product @key(fields: "id") @extends {
+    id: ID! @external
+    reviews: [Review!]!
+    averageRating: Float
+    reviewCount: Int!
+}
+
+# User reference — author of a review.
+type User @key(fields: "id") @extends {
+    id: ID! @external
+    reviews: [Review!]!
+}
+
+input CreateReviewInput {
+    productId: ID!
+    rating: Int!
+    comment: String!
+}
