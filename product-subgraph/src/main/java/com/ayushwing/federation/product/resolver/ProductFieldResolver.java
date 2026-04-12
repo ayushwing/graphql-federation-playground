@@ -1,10 +1,12 @@
 package com.ayushwing.federation.product.resolver;
 
 import com.ayushwing.federation.product.model.Product;
+import com.ayushwing.federation.product.model.User;
 import com.ayushwing.federation.product.repository.ProductRepository;
 
 import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsData;
+import com.netflix.graphql.dgs.DgsEntityFetcher;
 
 import graphql.schema.DataFetchingEnvironment;
 
@@ -32,6 +34,17 @@ public class ProductFieldResolver {
     }
 
     /**
+     * Entity fetcher for the User stub declared in this subgraph's schema.
+     * Apollo Router sends _entities queries here when it needs to resolve
+     * User.products. We echo the key map back as-is — DGS uses it as the
+     * source for the userProducts field resolver below.
+     */
+    @DgsEntityFetcher(name = "User")
+    public User fetchUserEntity(Map<String, Object> values) {
+        return new User((String) values.get("id"));
+    }
+
+    /**
      * Resolves {@code Product.createdBy} as a federation stub pointing to the
      * user-subgraph entity. Apollo Router replaces this with the full User.
      */
@@ -52,8 +65,7 @@ public class ProductFieldResolver {
      */
     @DgsData(parentType = "User", field = "products")
     public List<Product> userProducts(DataFetchingEnvironment env) {
-        Map<String, Object> user = env.getSource();
-        String userId = (String) user.get("id");
-        return productRepository.findByCreatedById(userId);
+        User user = env.getSource();
+        return productRepository.findByCreatedById(user.id());
     }
 }

@@ -84,15 +84,20 @@ query {
 ### Run with Docker Compose
 
 ```bash
-# Build all subgraphs
-mvn clean package -DskipTests
+# Build and start everything (subgraphs compile inside Docker — no local Maven needed)
+docker compose up -d --build
 
-# Start everything
-docker compose up -d
+# Tail logs for all services
+docker compose logs -f
 
-# The unified GraphQL API is now at:
-# http://localhost:4000/graphql
+# The unified GraphQL API + Apollo Sandbox UI:
+# http://localhost:4000
+
+# Jaeger distributed tracing UI:
+# http://localhost:16686
 ```
+
+Apollo Router waits for all three subgraphs to pass their health checks before accepting traffic.
 
 ### Run subgraphs individually
 
@@ -169,25 +174,29 @@ mutation AddReview {
 ```
 graphql-federation-playground/
 ├── user-subgraph/          # User type, profiles, entity fetcher
+│   └── Dockerfile
 ├── product-subgraph/       # Product catalog, pagination, filtering
+│   └── Dockerfile
 ├── review-subgraph/        # Reviews, DataLoader, subscriptions
+│   └── Dockerfile
 ├── gateway/
+│   ├── Dockerfile          # Apollo Router image
 │   ├── supergraph.yaml     # Rover composition config
 │   ├── supergraph.graphql  # Composed supergraph schema (generated)
-│   └── router.yaml         # Apollo Router configuration
-├── docker-compose.yml
+│   └── router.yaml         # Apollo Router config (JWT auth + query limits)
+├── docker-compose.yml      # Boots the full stack with one command
 └── README.md
 ```
 
 ## Roadmap
 
 - [x] Project structure and build setup
-- [ ] User subgraph (schema + resolvers + entity fetcher)
-- [ ] Product subgraph (catalog + pagination + filtering)
-- [ ] Review subgraph (extends Product + DataLoader)
-- [ ] Apollo Router gateway (composition + auth)
+- [x] User subgraph (schema + resolvers + entity fetcher)
+- [x] Product subgraph (catalog + pagination + filtering)
+- [x] Review subgraph (extends Product + DataLoader)
+- [x] Apollo Router gateway (composition + JWT auth + query limits)
+- [x] Docker Compose for full federation stack
 - [ ] Integration tests across subgraph boundaries
-- [ ] Docker Compose for full federation stack
 - [ ] GraphQL Subscriptions (real-time reviews)
 - [ ] Custom directives (`@auth`, `@cacheControl`)
 - [ ] Query tracing and performance analysis

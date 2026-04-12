@@ -1,0 +1,108 @@
+version: "3.9"
+
+# Full federation stack — one command boots all three subgraphs, Apollo Router, and Jaeger.
+#
+# Usage:
+#   docker compose up -d          # start everything
+#   docker compose logs -f        # tail all logs
+#   docker compose down           # stop and remove containers
+#
+# Endpoints:
+#   GraphQL API (unified)   http://localhost:4000
+#   Apollo Sandbox UI        http://localhost:4000
+#   User subgraph            http://localhost:8081/graphql
+#   Product subgraph         http://localhost:8082/graphql
+#   Review subgraph          http://localhost:8083/graphql
+#   Jaeger UI                http://localhost:16686
+
+services:
+
+  # ── User subgraph ────────────────────────────────────────────────────────────
+  user-subgraph:
+    build:
+      context: .
+      dockerfile: user-subgraph/Dockerfile
+    container_name: user-subgraph
+    ports:
+      - "8081:8081"
+    networks:
+      - federation
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ── Product subgraph ─────────────────────────────────────────────────────────
+  product-subgraph:
+    build:
+      context: .
+      dockerfile: product-subgraph/Dockerfile
+    container_name: product-subgraph
+    ports:
+      - "8082:8082"
+    networks:
+      - federation
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ── Review subgraph ──────────────────────────────────────────────────────────
+  review-subgraph:
+    build:
+      context: .
+      dockerfile: review-subgraph/Dockerfile
+    container_name: review-subgraph
+    ports:
+      - "8083:8083"
+    networks:
+      - federation
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8083/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ── Apollo Router (gateway) ──────────────────────────────────────────────────
+  apollo-router:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: apollo-router
+    ports:
+      - "4000:4000"
+    environment:
+      # Optional: set JWKS_URI to enable JWT validation
+      # JWKS_URI: http://your-idp/.well-known/jwks.json
+      JWKS_URI: ""
+    networks:
+      - federation
+    depends_on:
+      user-subgraph:
+        condition: service_healthy
+      product-subgraph:
+        condition: service_healthy
+      review-subgraph:
+        condition: service_healthy
+
+  # ── Jaeger (distributed tracing) ─────────────────────────────────────────────
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: jaeger
+    ports:
+      - "16686:16686"   # Jaeger UI
+      - "4317:4317"     # OTLP gRPC receiver
+      - "4318:4318"     # OTLP HTTP receiver
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    networks:
+      - federation
+
+networks:
+  federation:
+    driver: bridge
