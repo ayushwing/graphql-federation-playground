@@ -106,7 +106,11 @@ input CreateReviewInput @join__type(graph: REVIEWS) {
 
 # ── Root types ────────────────────────────────────────────────────────────────
 
-type Query {
+type Query
+  @join__type(graph: USERS)
+  @join__type(graph: PRODUCTS)
+  @join__type(graph: REVIEWS)
+{
   user(id: ID!): User @join__field(graph: USERS)
   users: [User!]! @join__field(graph: USERS)
   me: User @join__field(graph: USERS)
@@ -118,11 +122,15 @@ type Query {
   myReviews: [Review!]! @join__field(graph: REVIEWS)
 }
 
-type Mutation {
+type Mutation
+  @join__type(graph: REVIEWS)
+{
   createReview(input: CreateReviewInput!): Review! @join__field(graph: REVIEWS)
   deleteReview(id: ID!): Boolean! @join__field(graph: REVIEWS)
 }
 
-type Subscription {
+type Subscription
+  @join__type(graph: REVIEWS)
+{
   reviewAdded(productId: ID!): Review! @join__field(graph: REVIEWS)
 }

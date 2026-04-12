@@ -34,7 +34,7 @@ public class ReviewsByProductDataLoader implements BatchLoader<String, List<Revi
     private static final Logger log = LoggerFactory.getLogger(ReviewsByProductDataLoader.class);
 
     private final ReviewRepository reviewRepository;
-    private final Executor executor = Executors.newVirtualThreadPerTaskExecutor();
+    private final Executor executor = Executors.newCachedThreadPool();
 
     public ReviewsByProductDataLoader(ReviewRepository reviewRepository) {
         this.reviewRepository = reviewRepository;

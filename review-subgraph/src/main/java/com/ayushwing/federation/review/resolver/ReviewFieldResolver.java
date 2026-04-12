@@ -1,10 +1,13 @@
 package com.ayushwing.federation.review.resolver;
 
+import com.ayushwing.federation.review.model.Product;
 import com.ayushwing.federation.review.model.Review;
+import com.ayushwing.federation.review.model.User;
 import com.ayushwing.federation.review.repository.ReviewRepository;
 
 import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsData;
+import com.netflix.graphql.dgs.DgsEntityFetcher;
 
 import graphql.schema.DataFetchingEnvironment;
 
@@ -30,6 +33,22 @@ public class ReviewFieldResolver {
 
     public ReviewFieldResolver(ReviewRepository reviewRepository) {
         this.reviewRepository = reviewRepository;
+    }
+
+    /**
+     * Entity fetchers for the federation stubs declared in this subgraph.
+     * Apollo Router sends _entities queries here to resolve Product.reviews
+     * and User.reviews. We echo the key map back — DGS uses it as the
+     * source for the field resolvers below.
+     */
+    @DgsEntityFetcher(name = "Product")
+    public Product fetchProductEntity(Map<String, Object> values) {
+        return new Product((String) values.get("id"));
+    }
+
+    @DgsEntityFetcher(name = "User")
+    public User fetchUserEntity(Map<String, Object> values) {
+        return new User((String) values.get("id"));
     }
 
     /**
@@ -67,19 +86,15 @@ public class ReviewFieldResolver {
      */
     @DgsData(parentType = "Product", field = "reviews")
     public CompletableFuture<List<Review>> productReviews(DataFetchingEnvironment env) {
-        Map<String, Object> product = env.getSource();
-        String productId = (String) product.get("id");
-
-        DataLoader<String, List<Review>> dataLoader =
-                env.getDataLoader("reviewsByProduct");
-        return dataLoader.load(productId);
+        Product product = env.getSource();
+        DataLoader<String, List<Review>> dataLoader = env.getDataLoader("reviewsByProduct");
+        return dataLoader.load(product.id());
     }
 
     @DgsData(parentType = "Product", field = "averageRating")
     public Double averageRating(DataFetchingEnvironment env) {
-        Map<String, Object> product = env.getSource();
-        String productId = (String) product.get("id");
-        List<Review> reviews = reviewRepository.findByProductId(productId);
+        Product product = env.getSource();
+        List<Review> reviews = reviewRepository.findByProductId(product.id());
         if (reviews.isEmpty()) return null;
         OptionalDouble avg = reviews.stream().mapToInt(Review::getRating).average();
         return avg.isPresent() ? Math.round(avg.getAsDouble() * 10.0) / 10.0 : null;
@@ -87,9 +102,8 @@ public class ReviewFieldResolver {
 
     @DgsData(parentType = "Product", field = "reviewCount")
     public int reviewCount(DataFetchingEnvironment env) {
-        Map<String, Object> product = env.getSource();
-        String productId = (String) product.get("id");
-        return reviewRepository.findByProductId(productId).size();
+        Product product = env.getSource();
+        return reviewRepository.findByProductId(product.id()).size();
     }
 
     /**
@@ -97,8 +111,7 @@ public class ReviewFieldResolver {
      */
     @DgsData(parentType = "User", field = "reviews")
     public List<Review> userReviews(DataFetchingEnvironment env) {
-        Map<String, Object> user = env.getSource();
-        String userId = (String) user.get("id");
-        return reviewRepository.findByAuthorId(userId);
+        User user = env.getSource();
+        return reviewRepository.findByAuthorId(user.id());
     }
 }

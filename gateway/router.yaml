@@ -2,15 +2,17 @@
 # Docs: https://www.apollographql.com/docs/router/configuration/overview
 
 supergraph:
-  # Path to the composed supergraph schema.
-  # Regenerate with: rover supergraph compose --config supergraph.yaml > supergraph.graphql
-  path: /dist/schema/supergraph.graphql
-
-# Expose the router on all interfaces so Docker port-mapping works
-listen: 0.0.0.0:4000
+  # HTTP endpoint path for the unified GraphQL API
+  path: /graphql
+  # Expose the router on all interfaces so Docker port-mapping works
+  listen: 0.0.0.0:4000
+  introspection: true    # required by Apollo Sandbox
 
 sandbox:
   enabled: true          # Apollo Sandbox UI at http://localhost:4000
+
+homepage:
+  enabled: false         # disabled in favour of sandbox above
 
 include_subgraph_errors:
   all: true              # surface subgraph errors to clients (dev only — disable in prod)
@@ -29,15 +31,42 @@ cors:
     - http://localhost:4000
   allow_credentials: true
 
+# ── Authentication (Enterprise) ───────────────────────────────────────────────
+# JWT validation via JWKS requires a GraphOS Enterprise license.
+# To enable: set APOLLO_KEY + APOLLO_GRAPH_REF env vars and connect to GraphOS,
+# then uncomment the block below and set JWKS_URI to your identity provider.
+#
+# More info: https://www.apollographql.com/docs/router/configuration/authn-jwt
+#
+# authentication:
+#   router:
+#     jwt:
+#       jwks:
+#         - url: "${JWKS_URI:-http://localhost:9000/.well-known/jwks.json}"
+
+# ── Query protection (Enterprise) ─────────────────────────────────────────────
+# Operation depth / complexity limits also require a GraphOS Enterprise license.
+# Uncomment after connecting the router to a licensed graph in GraphOS.
+#
+# More info: https://www.apollographql.com/docs/router/configuration/operation-limits
+#
+# limits:
+#   max_depth: 10
+#   max_height: 200
+#   max_aliases: 30
+#   max_root_fields: 20
+
 traffic_shaping:
   all:
     deduplicate_query: true    # deduplicate identical in-flight subgraph queries
 
 telemetry:
-  tracing:
-    common:
-      service_name: "apollo-router"
-      service_namespace: "federation-playground"
-    otlp:
-      endpoint: http://jaeger:4317
-      protocol: grpc
+  exporters:
+    tracing:
+      common:
+        service_name: "apollo-router"
+        service_namespace: "federation-playground"
+      otlp:
+        enabled: true
+        endpoint: http://jaeger:4317
+        protocol: grpc
