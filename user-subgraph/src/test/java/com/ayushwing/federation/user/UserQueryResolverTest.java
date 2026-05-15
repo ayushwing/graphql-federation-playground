@@ -1,7 +1,6 @@
 package com.ayushwing.federation.user;
 
 import com.netflix.graphql.dgs.DgsQueryExecutor;
-import com.netflix.graphql.dgs.test.EnableDgsTest;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +11,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
-@EnableDgsTest
 class UserQueryResolverTest {
 
     @Autowired

@@ -9,12 +9,25 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: always
+  metrics:
+    distribution:
+      percentiles-histogram:
+        graphql.resolver.duration: true
+        graphql.query.duration: true
+      percentiles:
+        graphql.resolver.duration: 0.5, 0.95, 0.99
+        graphql.query.duration: 0.5, 0.95, 0.99
 
 dgs:
   graphql:
     path: /graphql
     schema-locations: classpath:schema/**/*.graphqls
+
+observability:
+  graphql:
+    # Field resolutions slower than this are logged at WARN.
+    slow-threshold-ms: 50

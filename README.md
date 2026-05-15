@@ -188,6 +188,33 @@ graphql-federation-playground/
 └── README.md
 ```
 
+## Performance Analysis
+
+Every subgraph times each resolver invocation and exports the timings to Micrometer / Prometheus.
+
+| Metric | Tags | What it measures |
+|--------|------|------------------|
+| `graphql.resolver.duration` | `parentType`, `field`, `status` | Time spent inside a single field's data fetcher |
+| `graphql.query.duration` | `operation`, `status` | Total execution time for one GraphQL operation |
+
+Both are recorded as histograms with the 50/95/99 percentiles. Resolutions that exceed `observability.graphql.slow-threshold-ms` (default `50`) are logged at WARN — useful for catching N+1 patterns and slow repository calls.
+
+Scrape per subgraph at:
+
+```
+GET http://localhost:8081/actuator/prometheus   # user-subgraph
+GET http://localhost:8082/actuator/prometheus   # product-subgraph
+GET http://localhost:8083/actuator/prometheus   # review-subgraph
+```
+
+Lower the slow-resolver threshold to see every fetch in the logs:
+
+```yaml
+observability:
+  graphql:
+    slow-threshold-ms: 0
+```
+
 ## Roadmap
 
 - [x] Project structure and build setup
@@ -196,10 +223,10 @@ graphql-federation-playground/
 - [x] Review subgraph (extends Product + DataLoader)
 - [x] Apollo Router gateway (composition + JWT auth + query limits)
 - [x] Docker Compose for full federation stack
+- [x] Query tracing and performance analysis
 - [ ] Integration tests across subgraph boundaries
 - [ ] GraphQL Subscriptions (real-time reviews)
 - [ ] Custom directives (`@auth`, `@cacheControl`)
-- [ ] Query tracing and performance analysis
 
 ## License
 
